@@ -2,6 +2,10 @@ spring:
   application:
     name: analysis-service
 
+app:
+  data:
+    path: file:/Users/dodge/Documents/Interview/HSBC/hsbc-homework/data/House_Price_Dataset.csv
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
