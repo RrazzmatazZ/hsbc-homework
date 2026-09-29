@@ -1,6 +1,5 @@
 package com.hsbc.homework.analysis.controller;
 
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hsbc.homework.analysis.dto.request.PropertyFilter;
 import com.hsbc.homework.analysis.dto.request.PropertyPageRequest;
-import com.hsbc.homework.analysis.dto.response.PageResponse;
+import com.hsbc.homework.analysis.dto.response.PropertyPageResponse;
 import com.hsbc.homework.analysis.model.PropertyInfo;
 import com.hsbc.homework.analysis.services.QueryService;
 
@@ -31,7 +30,7 @@ public class QueryController {
 
     @PostMapping(value = "/search")
     @Operation(summary = "search properties")
-    public PageResponse<PropertyInfo> search(
+    public PropertyPageResponse<PropertyInfo> search(
             @Valid @RequestBody PropertyPageRequest<PropertyFilter> request) {
         return queryService.search(request);
     }

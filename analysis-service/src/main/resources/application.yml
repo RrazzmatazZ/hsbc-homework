@@ -5,6 +5,8 @@ spring:
 app:
   data:
     path: file:/Users/dodge/Documents/Interview/HSBC/hsbc-homework/data/House_Price_Dataset.csv
+  prediction-service:
+    predict-url: ${PREDICTION_SERVICE_PREDICT_URL:http://localhost:8000/predict}
 
 springdoc:
   swagger-ui:

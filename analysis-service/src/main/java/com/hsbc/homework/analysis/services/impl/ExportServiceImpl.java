@@ -11,13 +11,14 @@ import com.hsbc.homework.analysis.model.PropertyInfo;
 import com.hsbc.homework.analysis.services.ExportService;
 import com.hsbc.homework.analysis.services.QueryService;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class ExportServiceImpl implements ExportService {
 
     private final QueryService queryService;
+
+    public ExportServiceImpl(QueryService queryService) {
+        this.queryService = queryService;
+    }
 
     @Override
     public byte[] exportPDF(PropertyExportRequest request) {

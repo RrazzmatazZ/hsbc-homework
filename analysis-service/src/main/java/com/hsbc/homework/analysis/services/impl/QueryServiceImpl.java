@@ -10,21 +10,22 @@ import org.springframework.web.server.ResponseStatusException;
 import com.hsbc.homework.analysis.dto.request.PropertyPageRequest;
 import com.hsbc.homework.analysis.dto.request.PropertyFilter;
 import com.hsbc.homework.analysis.dto.request.Range;
-import com.hsbc.homework.analysis.dto.response.PageResponse;
+import com.hsbc.homework.analysis.dto.response.PropertyPageResponse;
 import com.hsbc.homework.analysis.model.PropertyInfo;
 import com.hsbc.homework.analysis.repository.PropertyRepository;
 import com.hsbc.homework.analysis.services.QueryService;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class QueryServiceImpl implements QueryService {
 
     private final PropertyRepository propertyRepository;
 
+    public QueryServiceImpl(PropertyRepository repository) {
+        this.propertyRepository = repository;
+    }
+
     @Override
-    public PageResponse<PropertyInfo> search(PropertyPageRequest<PropertyFilter> request) {
+    public PropertyPageResponse<PropertyInfo> search(PropertyPageRequest<PropertyFilter> request) {
         List<PropertyInfo> matchingProperties = searchAll(
                 request.getFilter(),
                 request.getSortBy(),
@@ -38,7 +39,7 @@ public class QueryServiceImpl implements QueryService {
         int toIndex = (int) Math.min((long) fromIndex + request.getSize(), totalElements);
         List<PropertyInfo> content = List.copyOf(matchingProperties.subList(fromIndex, toIndex));
 
-        return PageResponse.<PropertyInfo>builder()
+        return PropertyPageResponse.<PropertyInfo>builder()
                 .content(content)
                 .page(request.getPage())
                 .size(request.getSize())

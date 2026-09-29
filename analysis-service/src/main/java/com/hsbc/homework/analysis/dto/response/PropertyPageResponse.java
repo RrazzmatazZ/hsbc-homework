@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Generic paginated response")
-public class PageResponse<T> {
+public class PropertyPageResponse<T> {
 
     @Schema(description = "Records in the current page")
     private List<T> content;
