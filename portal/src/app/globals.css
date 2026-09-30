@@ -2,25 +2,99 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+
+  --page-background: #f6f7f9;
+
+  --brand: #db0011;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-page: var(--page-background);
+  --color-brand: var(--brand);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .page-shell {
+    @apply flex-1 bg-page text-slate-950;
+  }
+
+  .page-container {
+    @apply mx-auto max-w-6xl px-5 py-8 sm:px-6 sm:py-10;
+  }
+
+  .card {
+    @apply border border-slate-200 bg-white;
+  }
+
+  .collapsible-card {
+    @apply mt-4 border border-slate-200 bg-white;
+  }
+
+  .collapsible-card-summary {
+    @apply flex cursor-pointer list-none items-center justify-between px-4 py-4;
+  }
+
+  .collapsible-card-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .supporting-text {
+    @apply mt-1 text-sm text-slate-500;
+  }
+
+  .section-title {
+    @apply text-base font-semibold text-slate-950;
+  }
+
+  .item-title {
+    @apply text-sm font-semibold text-slate-800;
+  }
+
+  .form-control {
+    @apply w-full border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-600;
+  }
+
+  .form-label {
+    @apply mb-1.5 block;
+  }
+
+  .secondary-button {
+    @apply border border-slate-300 text-sm hover:bg-slate-50;
+  }
+
+  .primary-button {
+    @apply bg-slate-950 px-4 py-2 text-sm text-white hover:bg-slate-800;
+  }
+
+  .pagination-button {
+    @apply rounded border border-slate-200 px-3 py-2 text-sm disabled:text-slate-300;
+  }
+
+  .property-table th,
+  .property-table td {
+    @apply px-4 py-3;
+  }
+
+  .property-table td {
+    @apply whitespace-nowrap;
+  }
 }
