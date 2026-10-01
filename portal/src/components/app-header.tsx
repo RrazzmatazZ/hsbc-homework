@@ -12,7 +12,7 @@ export function AppHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-6">
         <nav aria-label="Primary navigation" className="flex items-center gap-4 sm:gap-6">
           {navigation.map((item) => {

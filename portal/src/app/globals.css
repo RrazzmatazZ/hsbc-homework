@@ -7,6 +7,8 @@
   --page-background: #f6f7f9;
 
   --brand: #db0011;
+
+  interpolate-size: allow-keywords;
 }
 
 @theme inline {
@@ -49,6 +51,18 @@
     @apply mt-4 border border-slate-200 bg-white;
   }
 
+  .collapsible-card::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 400ms ease 80ms,
+      content-visibility 480ms allow-discrete;
+  }
+
+  .collapsible-card[open]::details-content {
+    block-size: auto;
+  }
+
   .collapsible-card-summary {
     @apply flex cursor-pointer list-none items-center justify-between px-4 py-4;
   }
@@ -70,7 +84,15 @@
   }
 
   .form-control {
-    @apply w-full border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-600;
+    @apply w-full border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-600 rounded-md;
+  }
+
+  .form-control[aria-invalid="true"] {
+    @apply border-red-500 focus:border-red-600;
+  }
+
+  .form-error {
+    @apply mt-1 text-xs text-red-700;
   }
 
   .form-label {
@@ -96,5 +118,11 @@
 
   .property-table td {
     @apply whitespace-nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsible-card::details-content {
+    transition: none;
   }
 }
