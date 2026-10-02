@@ -3,10 +3,12 @@ package com.hsbc.homework.analysis.services.impl;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.hsbc.homework.analysis.config.CacheConfig;
 import com.hsbc.homework.analysis.dto.request.PropertyPageRequest;
 import com.hsbc.homework.analysis.dto.request.PropertyFilter;
 import com.hsbc.homework.analysis.dto.request.Range;
@@ -25,6 +27,7 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.PROPERTY_PAGES, sync = true)
     public PropertyPageResponse<PropertyInfo> search(PropertyPageRequest<PropertyFilter> request) {
         List<PropertyInfo> matchingProperties = searchAll(
                 request.getFilter(),

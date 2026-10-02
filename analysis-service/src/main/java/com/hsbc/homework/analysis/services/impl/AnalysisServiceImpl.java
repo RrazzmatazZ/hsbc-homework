@@ -6,8 +6,10 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import com.hsbc.homework.analysis.config.CacheConfig;
 import com.hsbc.homework.analysis.dto.request.PropertyFilter;
 import com.hsbc.homework.analysis.dto.request.PropertySegmentRequest;
 import com.hsbc.homework.analysis.dto.request.PropertySummaryRequest;
@@ -33,6 +35,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.PROPERTY_SUMMARIES, sync = true)
     public PropertySummaryResponse summary(PropertySummaryRequest request) {
         List<PropertyInfo> properties = queryService.searchAll(
                 request.getFilter(),
@@ -80,6 +83,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.PROPERTY_SEGMENTS, sync = true)
     public PropertySegmentResponse segments(PropertySegmentRequest request) {
         PropertySegmentField segmentBy = request.getSegmentBy();
         List<PropertyInfo> properties = queryService.searchAll(

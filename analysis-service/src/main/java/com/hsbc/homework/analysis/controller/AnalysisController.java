@@ -1,6 +1,5 @@
 package com.hsbc.homework.analysis.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +26,7 @@ public class AnalysisController {
         this.analysisService = analysisService;
     }
 
-    @GetMapping("/summary")
+    @PostMapping("/summary")
     @Operation(summary = "Get aggregate statistics for filtered properties")
     public PropertySummaryResponse summary(@Valid @RequestBody PropertySummaryRequest request) {
         return analysisService.summary(request);
