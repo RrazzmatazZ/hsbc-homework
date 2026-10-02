@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,7 +18,7 @@ class HouseFeatureData(BaseModel):
     square_footage: int = Field(ge=0)
     bedrooms: int = Field(ge=0)
     bathrooms: float = Field(ge=0)
-    year_built: int = Field(le=datetime.now().year)
+    year_built: int = Field(le=datetime.now(timezone.utc).year)
     lot_size: int = Field(ge=0)
     distance_to_city_center: float = Field(ge=0)
     school_rating: float = Field(ge=0, le=10)
@@ -36,6 +36,8 @@ class PredictionResponse(BaseModel):
     """prediction response data structure, returns a list of predictions for each input data point"""
 
     predictions: list[float]
+    base_value: float
+    contributions: list[dict[str, float]]
 
 
 class HealthResponse(BaseModel):

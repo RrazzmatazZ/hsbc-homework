@@ -30,7 +30,6 @@ type PropertyTableProps<T extends PropertyTableRow> = {
   priceColumnLabel?: string;
   sort?: PropertyTableSort;
   loading?: boolean;
-  error?: string;
   emptyMessage?: string;
   minHeightClassName?: string;
   rowAction?: {
@@ -86,7 +85,6 @@ export function PropertyTable<T extends PropertyTableRow>({
   priceColumnLabel = "Price",
   sort,
   loading = false,
-  error,
   emptyMessage = "No property data.",
   minHeightClassName = "",
   rowAction,
@@ -95,12 +93,6 @@ export function PropertyTable<T extends PropertyTableRow>({
 
   return (
     <div>
-      {error ? (
-        <p role="alert" className="border-b border-slate-200 px-4 py-3 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-
       <div
         className={`relative overflow-x-auto ${minHeightClassName}`}
         aria-busy={loading}

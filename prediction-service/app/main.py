@@ -1,19 +1,19 @@
-from fastapi import FastAPI, Depends, Request, Response, Body, status
 import logging
 import os
+from contextlib import asynccontextmanager
 from typing import Annotated
+
+from fastapi import Body, Depends, FastAPI, Request, Response, status
+
+from app.config import MODEL_DIR, MODEL_FILENAME
 from app.schemas import (
+    HealthResponse,
+    HealthStatus,
     ModelInfoResponse,
     PredictionRequest,
     PredictionResponse,
-    HealthResponse,
-    HealthStatus,
 )
 from app.services import ModelService
-from contextlib import asynccontextmanager
-
-
-from app.config import MODEL_FILENAME, MODEL_DIR
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
@@ -63,7 +63,7 @@ def get_model_service(request: Request) -> ModelService:
 
 @app.get("/model-info", response_model=ModelInfoResponse)
 def model_info(
-    model_service: ModelService = Depends(get_model_service),
+    model_service: Annotated[ModelService, Depends(get_model_service)],
 ) -> ModelInfoResponse:
     return model_service.get_model_info()
 
@@ -116,7 +116,7 @@ def predict(
             }
         ),
     ],
-    model_service: ModelService = Depends(get_model_service),
+    model_service: Annotated[ModelService, Depends(get_model_service)],
 ) -> PredictionResponse:
     return model_service.predict(request.data)
 

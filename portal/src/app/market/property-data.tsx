@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { PropertyInput } from "@/components/property-input";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/components/property-table";
 import { useErrorWarning } from "@/hooks/use-error-warning";
 import { useLoading } from "@/hooks/use-loading";
-import { PROPERTY_FIELDS } from "@/lib/property-fields";
+import { PROPERTY_FIELDS, type PropertyFeatures } from "@/lib/property-fields";
 
 import type { PropertyFilter } from "./property-filter";
 
@@ -26,12 +26,30 @@ type PropertySort = {
   direction: "asc" | "desc";
 };
 
+type WhatIfResult = {
+  predictedPrice: number;
+  priceChange: number;
+  percentageChange: number;
+};
+
+type ExportFormat = "csv" | "pdf";
+
 const PAGE_SIZE = 10;
 const priceFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   maximumFractionDigits: 0,
 });
+
+function formatSignedCurrency(value: number) {
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  return `${sign}${priceFormatter.format(Math.abs(value))}`;
+}
+
+function formatSignedPercentage(value: number) {
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  return `${sign}${Math.abs(value).toFixed(2)}%`;
+}
 
 type PropertyDataProps = {
   filter: PropertyFilter;
@@ -43,8 +61,76 @@ export function PropertyData({ filter, page, onPageRequest }: PropertyDataProps)
   const [data, setData] = useState<PropertyPage | null>(null);
   const [sort, setSort] = useState<PropertySort>({ field: "id", direction: "asc" });
   const [selectedProperty, setSelectedProperty] = useState<PropertyTableRow | null>(null);
+  const [whatIfResult, setWhatIfResult] = useState<WhatIfResult | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const { showErrorMsg } = useErrorWarning();
   const { loading, runWithLoading } = useLoading(500, true);
+
+  function openWhatIf(property: PropertyTableRow) {
+    setWhatIfResult(null);
+    setSelectedProperty(property);
+  }
+
+  async function exportProperties(format: ExportFormat) {
+    if (exporting) return;
+    setExporting(format);
+
+    try {
+      const response = await fetch(`/api/analysis/export/${format}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sortBy: sort.field,
+          isASC: sort.direction === "asc",
+          filter: Object.keys(filter).length > 0 ? filter : undefined,
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `market-report.${format}`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      showErrorMsg(`Unable to export the ${format.toUpperCase()} report.`);
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function runWhatIf(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedProperty || submitting) return;
+
+    const formData = new FormData(event.currentTarget);
+    const modifiedFeatures = Object.fromEntries(
+      PROPERTY_FIELDS.map((field) => [field.name, Number(formData.get(field.name))]),
+    ) as PropertyFeatures;
+
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/analysis/what-if", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          previousInfo: { ...selectedProperty, id: Number(selectedProperty.id) },
+          modifiedFeatures,
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+      setWhatIfResult((await response.json()) as WhatIfResult);
+    } catch {
+      showErrorMsg("Unable to run what-if analysis.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -52,7 +138,7 @@ export function PropertyData({ filter, page, onPageRequest }: PropertyDataProps)
     async function load() {
       try {
         const nextData = await runWithLoading(async () => {
-          const response = await fetch("/api/properties", {
+          const response = await fetch("/api/analysis/properties", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -109,6 +195,20 @@ export function PropertyData({ filter, page, onPageRequest }: PropertyDataProps)
       </summary>
 
       <div className="border-t border-slate-200">
+        <div className="flex justify-end gap-2 border-b border-slate-200 px-4 py-3">
+          {(["csv", "pdf"] as const).map((format) => (
+            <button
+              key={format}
+              type="button"
+              disabled={exporting !== null}
+              onClick={() => void exportProperties(format)}
+              className="secondary-button px-3 py-1.5 disabled:cursor-not-allowed disabled:text-slate-400"
+            >
+              {exporting === format ? "Exporting…" : `Export ${format.toUpperCase()}`}
+            </button>
+          ))}
+        </div>
+
         <PropertyTable
           data={data?.content ?? []}
           page={data?.page ?? page}
@@ -133,7 +233,7 @@ export function PropertyData({ filter, page, onPageRequest }: PropertyDataProps)
           minHeightClassName="min-h-130"
           rowAction={{
             label: "What-if",
-            onClick: setSelectedProperty,
+            onClick: openWhatIf,
           }}
         />
       </div>
@@ -163,7 +263,7 @@ export function PropertyData({ filter, page, onPageRequest }: PropertyDataProps)
               </button>
             </div>
 
-            <form onSubmit={(event) => event.preventDefault()}>
+            <form onSubmit={runWhatIf} onChange={() => setWhatIfResult(null)}>
               <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
                 <p className="text-xs font-medium uppercase text-slate-500">Selected property</p>
                 <div className="mt-2 flex flex-wrap gap-x-8 gap-y-1 text-sm">
@@ -188,9 +288,9 @@ export function PropertyData({ filter, page, onPageRequest }: PropertyDataProps)
                 <p className="item-title">Scenario result</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   {[
-                    ["Predicted price", "—"],
-                    ["Price change", "—"],
-                    ["Percentage change", "—"],
+                    ["Predicted price", whatIfResult ? priceFormatter.format(whatIfResult.predictedPrice) : "—"],
+                    ["Price change", whatIfResult ? formatSignedCurrency(whatIfResult.priceChange) : "—"],
+                    ["Percentage change", whatIfResult ? formatSignedPercentage(whatIfResult.percentageChange) : "—"],
                   ].map(([label, value]) => (
                     <div key={label} className="border border-slate-200 bg-white p-3">
                       <p className="text-xs text-slate-500">{label}</p>
@@ -208,8 +308,12 @@ export function PropertyData({ filter, page, onPageRequest }: PropertyDataProps)
                 >
                   Cancel
                 </button>
-                <button type="submit" className="primary-button">
-                  Run what-if
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="primary-button disabled:cursor-not-allowed disabled:bg-slate-400"
+                >
+                  {submitting ? "Running…" : "Run what-if"}
                 </button>
               </div>
             </form>

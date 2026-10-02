@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-
-const analysisServiceUrl =
-  process.env.ANALYSIS_SERVICE_URL ?? "http://localhost:8080";
+import { ANALYSIS_SERVICE_URL } from "@/lib/config/service-config";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const response = await fetch(`${analysisServiceUrl}/properties/search`, {
+    const response = await fetch(`${ANALYSIS_SERVICE_URL}/what-if`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(await request.json()),
       cache: "no-store",
     });
 

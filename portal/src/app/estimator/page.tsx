@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useCallback, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 import { PropertyInput } from "@/components/property-input";
 import { useErrorWarning } from "@/hooks/use-error-warning";
@@ -8,6 +8,7 @@ import { useLoading } from "@/hooks/use-loading";
 import { PROPERTY_FIELDS, type PropertyFeatures } from "@/lib/property-fields";
 import { savePredictionHistory } from "@/lib/prediction-history";
 
+import { FeatureContributionChart } from "./feature-contribution-chart";
 import { HistoryDialog } from "./history-dialog";
 
 const priceFormatter = new Intl.NumberFormat("en-US", {
@@ -16,13 +17,43 @@ const priceFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+type PredictionResult = {
+  predictedPrice: number;
+  contributions: PropertyFeatures;
+};
+
+type ServiceStatus = "Checking" | "Ready" | "Pending" | "Unavailable";
+
 export default function EstimatorPage() {
-  const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
-  const [requestFailed, setRequestFailed] = useState(false);
+  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+  const [serviceStatus, setServiceStatus] = useState<ServiceStatus>("Checking");
   const [historyOpen, setHistoryOpen] = useState(false);
   const { showErrorMsg } = useErrorWarning();
   const { loading, runWithLoading } = useLoading();
   const closeHistory = useCallback(() => setHistoryOpen(false), []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function checkService() {
+      try {
+        const response = await fetch("/api/predict/health", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const result = (await response.json()) as { status?: string };
+
+        if (result.status === "ready") setServiceStatus("Ready");
+        else if (result.status === "pending") setServiceStatus("Pending");
+        else setServiceStatus("Unavailable");
+      } catch {
+        if (!controller.signal.aborted) setServiceStatus("Unavailable");
+      }
+    }
+
+    void checkService();
+    return () => controller.abort();
+  }, []);
 
   async function submitPrediction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,8 +61,6 @@ export default function EstimatorPage() {
     const features = Object.fromEntries(
       PROPERTY_FIELDS.map((field) => [field.name, Number(formData.get(field.name))]),
     ) as PropertyFeatures;
-
-    setRequestFailed(false);
 
     try {
       const result = await runWithLoading(async () => {
@@ -42,13 +71,18 @@ export default function EstimatorPage() {
         });
 
         if (!response.ok) throw new Error();
-        return (await response.json()) as { predictedPrice: number };
+        return (await response.json()) as PredictionResult;
       });
 
-      setPredictedPrice(result.predictedPrice);
-      savePredictionHistory(features, result.predictedPrice);
+      setPrediction(result);
+      setServiceStatus("Ready");
+      savePredictionHistory(
+        features,
+        result.predictedPrice,
+        result.contributions,
+      );
     } catch {
-      setRequestFailed(true);
+      setServiceStatus("Unavailable");
       showErrorMsg("Unable to estimate the property value.");
     }
   }
@@ -78,9 +112,8 @@ export default function EstimatorPage() {
                 <PropertyInput
                   key={field.name}
                   {...field}
-                  containerClassName={`border border-slate-200 p-3 ${
-                    index === PROPERTY_FIELDS.length - 1 ? "sm:col-span-2" : ""
-                  }`}
+                  containerClassName={`border border-slate-200 p-3 ${index === PROPERTY_FIELDS.length - 1 ? "sm:col-span-2" : ""
+                    }`}
                 />
               ))}
             </div>
@@ -97,33 +130,25 @@ export default function EstimatorPage() {
           </form>
 
           <aside className="card p-5 sm:p-6" aria-labelledby="estimate-result-heading">
-            <h2 id="estimate-result-heading" className="section-title">Estimated property value</h2>
+            <h2 id="estimate-result-heading" className="section-title">
+              Estimated property value
+            </h2>
 
             <p className="mt-8 text-3xl font-semibold">
-              {predictedPrice === null ? "—" : priceFormatter.format(predictedPrice)}
+              {prediction === null ? "—" : priceFormatter.format(prediction.predictedPrice)}
             </p>
 
             <section className="mt-8 border-t border-slate-200 pt-5" aria-labelledby="feature-contribution-heading">
-              <h3 id="feature-contribution-heading" className="item-title">
+              <h2 id="feature-contribution-heading" className="section-title">
                 Feature contribution
-              </h3>
-              <p className="supporting-text">
-                How each property feature affects the predicted price.
-              </p>
-              <div className="relative mt-4 flex h-44 items-center justify-center border border-dashed border-slate-200 bg-slate-50">
-                <span
-                  aria-hidden="true"
-                  className="absolute bottom-9 left-1/2 top-4 border-l border-dashed border-slate-300"
-                />
-                <p className="relative z-10 bg-slate-50 px-3 text-center text-sm text-slate-500">
-                  Contribution data will appear here.
-                </p>
-                <span className="absolute bottom-3 left-4 text-xs text-slate-400">
-                  Negative impact
-                </span>
-                <span className="absolute bottom-3 right-4 text-xs text-slate-400">
-                  Positive impact
-                </span>
+              </h2>
+
+              <div className="mt-4">
+                {
+                  prediction?.contributions && (
+                    <FeatureContributionChart contributions={prediction.contributions} />
+                  )
+                }
               </div>
             </section>
 
@@ -131,13 +156,7 @@ export default function EstimatorPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">Service status</span>
                 <span className="font-medium text-slate-700">
-                  {loading ? "Predicting" : requestFailed ? "Unavailable" : "Ready"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">History</span>
-                <span className="font-medium text-slate-700">
-                  {predictedPrice === null ? "No prediction yet" : "Saved in this browser"}
+                  {loading ? "Predicting" : serviceStatus}
                 </span>
               </div>
             </div>

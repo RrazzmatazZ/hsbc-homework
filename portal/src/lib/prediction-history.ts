@@ -5,6 +5,7 @@ export type PredictionHistoryEntry = {
   createdAt: string;
   features: PropertyFeatures;
   predictedPrice: number;
+  contributions?: PropertyFeatures;
 };
 
 const STORAGE_KEY = "property-prediction-history";
@@ -27,6 +28,7 @@ export function readPredictionHistory(): PredictionHistoryEntry[] {
 export function savePredictionHistory(
   features: PropertyFeatures,
   predictedPrice: number,
+  contributions: PropertyFeatures,
 ) {
   if (typeof window === "undefined") return;
 
@@ -36,6 +38,7 @@ export function savePredictionHistory(
       createdAt: new Date().toISOString(),
       features,
       predictedPrice,
+      contributions,
     };
     const history = [entry, ...readPredictionHistory()].slice(0, MAX_HISTORY_ITEMS);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { useErrorWarning } from "@/hooks/use-error-warning";
 
@@ -10,18 +10,27 @@ import {
   type PropertyFilterField,
 } from "./property-filter";
 import { PropertyData } from "./property-data";
-
-const metrics = ["Properties", "Average price", "Median price", "Price per sq ft"];
-const charts = [
-  ["Price distribution", "Understand how property prices are spread across the dataset."],
-  ["Area vs price", "Explore the relationship between square footage and value."],
-  ["Price by bedrooms", "Compare average prices across property segments."],
-  ["School rating impact", "Analyse how school ratings relate to market value."],
-] as const;
+import { MarketStatistics } from "./market-statistics";
 
 type MarketDataProps = {
   filter: PropertyFilter;
 };
+
+type MarketSummaryData = {
+  propertyCount: number;
+  averagePrice: number;
+  minPrice: number;
+  maxPrice: number;
+  averagePricePerSquareFoot: number;
+};
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+const formatCompactPrice = (value: number) => `$${Math.round(value / 1000)}k`;
 
 function readBoundary(formData: FormData, field: PropertyFilterField, boundary: "from" | "to") {
   const value = formData.get(`${field}.${boundary}`);
@@ -30,7 +39,51 @@ function readBoundary(formData: FormData, field: PropertyFilterField, boundary: 
 }
 
 function MarketSummary({ filter }: MarketDataProps) {
+  const [summary, setSummary] = useState<MarketSummaryData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { showErrorMsg } = useErrorWarning();
   const filterCount = Object.keys(filter).length;
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function load() {
+      setLoading(true);
+      try {
+        const response = await fetch("/api/analysis/summary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filter: filterCount > 0 ? filter : undefined,
+          }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) throw new Error();
+        setSummary((await response.json()) as MarketSummaryData);
+      } catch {
+        if (!controller.signal.aborted) {
+          setSummary(null);
+          showErrorMsg("Unable to load market summary.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    void load();
+    return () => controller.abort();
+  }, [filter, filterCount, showErrorMsg]);
+
+  const metrics = [
+    ["Properties", summary?.propertyCount.toLocaleString("en-US")],
+    ["Average price", summary && currencyFormatter.format(summary.averagePrice)],
+    [
+      "Price range",
+      summary && `${formatCompactPrice(summary.minPrice)} – ${formatCompactPrice(summary.maxPrice)}`,
+    ],
+    ["Price per sq ft", summary && currencyFormatter.format(summary.averagePricePerSquareFoot)],
+  ];
 
   return (
     <section
@@ -38,43 +91,14 @@ function MarketSummary({ filter }: MarketDataProps) {
       aria-label={`Market summary, ${filterCount === 0 ? "all properties" : `${filterCount} filters applied`}`}
     >
       {metrics.map((metric) => (
-        <article key={metric} className="card p-4">
-          <p className="text-sm font-medium text-slate-500">{metric}</p>
-          <p className="mt-3 text-2xl font-semibold text-slate-950">—</p>
+        <article key={metric[0]} className="card p-4">
+          <p className="text-sm font-medium text-slate-500">{metric[0]}</p>
+          <p className="mt-3 text-2xl font-semibold text-slate-950">
+            {loading ? "…" : metric[1] || "—"}
+          </p>
         </article>
       ))}
     </section>
-  );
-}
-
-function MarketStatistics({ filter }: MarketDataProps) {
-  const filterCount = Object.keys(filter).length;
-
-  return (
-    <details open className="group collapsible-card">
-      <summary className="collapsible-card-summary">
-        <div>
-          <h2 className="section-title">Market statistics</h2>
-        </div>
-        <span className="text-sm text-slate-500 group-open:hidden">Show</span>
-        <span className="hidden text-sm text-slate-500 group-open:inline">Hide</span>
-      </summary>
-
-      <section
-        className="grid gap-4 border-t border-slate-200 p-4 lg:grid-cols-2"
-        aria-label={`Market visualisations, ${filterCount === 0 ? "all properties" : `${filterCount} filters applied`}`}
-      >
-        {charts.map(([title]) => (
-          <article key={title} className="min-h-64 border border-slate-200 p-5">
-            <h3 className="item-title">{title}</h3>
-            <div
-              className="mt-6 flex h-32 items-end gap-3 border border-dashed border-slate-200 bg-slate-50 px-6 pb-4 pt-7"
-              aria-hidden="true"
-            />
-          </article>
-        ))}
-      </section>
-    </details>
   );
 }
 
