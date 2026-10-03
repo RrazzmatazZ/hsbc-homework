@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.hsbc.homework.analysis.common.PropertyDataUtils;
 import com.hsbc.homework.analysis.dto.request.PropertyExportRequest;
+import com.hsbc.homework.analysis.exception.ExportException;
 import com.hsbc.homework.analysis.model.PropertyInfo;
 import com.hsbc.homework.analysis.services.ExportService;
 import com.hsbc.homework.analysis.services.QueryService;
@@ -30,7 +31,7 @@ public class ExportServiceImpl implements ExportService {
         try {
             return PropertyDataUtils.exportPropertiesToPdf(properties);
         } catch (IOException exception) {
-            throw new IllegalStateException("Failed to generate property PDF", exception);
+            throw new ExportException("Failed to generate property PDF", exception);
         }
     }
 
@@ -44,7 +45,7 @@ public class ExportServiceImpl implements ExportService {
         try {
             return PropertyDataUtils.exportPropertiesToCsv(properties);
         } catch (IOException exception) {
-            throw new IllegalStateException("Failed to generate property CSV", exception);
+            throw new ExportException("Failed to generate property CSV", exception);
         }
     }
 

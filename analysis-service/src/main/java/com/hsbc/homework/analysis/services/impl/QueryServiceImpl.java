@@ -4,15 +4,15 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.hsbc.homework.analysis.config.CacheConfig;
 import com.hsbc.homework.analysis.dto.request.PropertyPageRequest;
 import com.hsbc.homework.analysis.dto.request.PropertyFilter;
 import com.hsbc.homework.analysis.dto.request.Range;
 import com.hsbc.homework.analysis.dto.response.PropertyPageResponse;
+import com.hsbc.homework.analysis.exception.InvalidQueryException;
+import com.hsbc.homework.analysis.exception.PropertyNotFoundException;
 import com.hsbc.homework.analysis.model.PropertyInfo;
 import com.hsbc.homework.analysis.repository.PropertyRepository;
 import com.hsbc.homework.analysis.services.QueryService;
@@ -70,9 +70,7 @@ public class QueryServiceImpl implements QueryService {
     @Override
     public PropertyInfo findById(long id) {
         return propertyRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Property not found: " + id));
+                .orElseThrow(() -> new PropertyNotFoundException("Property not found: " + id));
     }
 
     private boolean matches(PropertyInfo property, PropertyFilter filter) {
@@ -101,9 +99,7 @@ public class QueryServiceImpl implements QueryService {
             case "distanceToCityCenter" -> Comparator.comparing(i -> i.getDistanceToCityCenter());
             case "schoolRating" -> Comparator.comparing(i -> i.getSchoolRating());
             case "price" -> Comparator.comparing(i -> i.getPrice());
-            default -> throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Unsupported sort field: " + sortBy);
+            default -> throw new InvalidQueryException("Unsupported sort field: " + sortBy);
         };
     }
 

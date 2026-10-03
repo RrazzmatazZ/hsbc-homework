@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+
+import com.hsbc.homework.analysis.exception.PredictionServiceException;
 
 @Component
 public class PredictionClient {
@@ -33,15 +36,22 @@ public class PredictionClient {
 
     public PredictionResponse predict(PredictionRequest request) {
         JsonNode requestBody = requestMapper.valueToTree(request);
-        PredictionResponse response = restClient.post()
-                .uri(predictUrl)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(requestBody)
-                .retrieve()
-                .body(PredictionResponse.class);
+        PredictionResponse response;
+        try {
+            response = restClient.post()
+                    .uri(predictUrl)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(requestBody)
+                    .retrieve()
+                    .body(PredictionResponse.class);
+        } catch (RestClientException exception) {
+            throw new PredictionServiceException("Prediction service request failed", exception);
+        }
 
-        if (response == null || response.getPredictions() == null) {
-            throw new IllegalStateException("Prediction service returned an empty response");
+        if (response == null
+                || response.getPredictions() == null
+                || response.getPredictions().isEmpty()) {
+            throw new PredictionServiceException("Prediction service returned an empty response");
         }
         return response;
     }

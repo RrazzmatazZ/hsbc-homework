@@ -10,6 +10,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Repository;
 
 import com.hsbc.homework.analysis.common.PropertyDataUtils;
+import com.hsbc.homework.analysis.exception.DataLoadException;
 import com.hsbc.homework.analysis.model.PropertyInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -43,13 +44,13 @@ public class PropertyRepository {
             log.info("start loading property csv...");
             List<PropertyInfo> loadedProperties = PropertyDataUtils.readPropertiesFromCsv(inputStream);
             if (loadedProperties.isEmpty()) {
-                throw new IllegalStateException(
+                throw new DataLoadException(
                         "Property CSV contains no data: " + propertyCsvResource.getDescription());
             }
              log.info("successful loading! ");
             return List.copyOf(loadedProperties);
         } catch (IOException | IllegalArgumentException exception) {
-            throw new IllegalStateException(
+            throw new DataLoadException(
                     "Failed to load property CSV: " + propertyCsvResource.getDescription(),
                     exception);
         }
