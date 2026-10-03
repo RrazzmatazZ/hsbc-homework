@@ -1,0 +1,91 @@
+name: hsbc-homework
+
+services:
+  prediction-service:
+    image: hsbc-homework/prediction-service:local
+    build:
+      context: .
+      dockerfile: prediction-service/Dockerfile
+    init: true
+    environment:
+      LOG_LEVEL: ${PREDICTION_LOG_LEVEL:-INFO}
+      MODEL_DIR: /app/artifacts
+    ports:
+      - "${PREDICTION_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - property-network
+
+  analysis-service:
+    image: hsbc-homework/analysis-service:local
+    build:
+      context: .
+      dockerfile: analysis-service/Dockerfile
+    init: true
+    environment:
+      PROPERTY_DATA_PATH: file:/app/data/House_Price_Dataset.csv
+      PREDICTION_SERVICE_PREDICT_URL: http://prediction-service:8000/predict
+    ports:
+      - "${ANALYSIS_PORT:-8080}:8080"
+    depends_on:
+      prediction-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - --fail
+        - --silent
+        - --show-error
+        - http://127.0.0.1:8080/v3/api-docs
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    networks:
+      - property-network
+
+  portal:
+    image: hsbc-homework/portal:local
+    build:
+      context: .
+      dockerfile: portal/Dockerfile
+    init: true
+    environment:
+      ANALYSIS_SERVICE_URL: http://analysis-service:8080
+      PREDICTION_SERVICE_URL: http://prediction-service:8000
+    ports:
+      - "${PORTAL_PORT:-3000}:3000"
+    depends_on:
+      analysis-service:
+        condition: service_healthy
+      prediction-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --spider
+        - http://127.0.0.1:3000/market
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - property-network
+
+networks:
+  property-network:
+    driver: bridge

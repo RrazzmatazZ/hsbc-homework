@@ -7,7 +7,7 @@ app:
     maximum-size: 500
     expire-after-access: 10m
   data:
-    path: file:/Users/dodge/Documents/Interview/HSBC/hsbc-homework/data/House_Price_Dataset.csv
+    path: ${PROPERTY_DATA_PATH:file:../data/House_Price_Dataset.csv}
   prediction-service:
     predict-url: ${PREDICTION_SERVICE_PREDICT_URL:http://localhost:8000/predict}
 

@@ -124,5 +124,6 @@ wheels/
 # Generated ML model files; keep the output directory in Git.
 prediction-service/artifacts/*
 !prediction-service/artifacts/.gitkeep
+!prediction-service/artifacts/linear_regression.joblib
 
 # Project datasets under data/ are intentionally versioned.
