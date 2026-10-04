@@ -90,9 +90,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
         var fieldError = exception.getBindingResult().getFieldError();
-        String message = fieldError == null
-                ? "Request validation failed"
-                : fieldError.getField() + ": " + fieldError.getDefaultMessage();
+        var globalError = exception.getBindingResult().getGlobalError();
+        String message = fieldError != null
+                ? fieldError.getField() + ": " + fieldError.getDefaultMessage()
+                : globalError != null
+                        ? globalError.getDefaultMessage()
+                        : "Request validation failed";
         log.warn("Request validation failed: {}", message);
         return response(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", message);
     }

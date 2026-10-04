@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from enum import StrEnum
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,11 +16,11 @@ class HouseFeatureData(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    square_footage: int = Field(ge=0)
+    square_footage: int = Field(ge=1)
     bedrooms: int = Field(ge=0)
     bathrooms: float = Field(ge=0)
-    year_built: int = Field(le=datetime.now(timezone.utc).year)
-    lot_size: int = Field(ge=0)
+    year_built: int = Field(ge=1800, le=datetime.now(timezone.utc).year)
+    lot_size: int = Field(ge=1)
     distance_to_city_center: float = Field(ge=0)
     school_rating: float = Field(ge=0, le=10)
 
@@ -29,7 +30,7 @@ class PredictionRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    data: HouseFeatureData | list[HouseFeatureData]
+    data: HouseFeatureData | Annotated[list[HouseFeatureData], Field(min_length=1)]
 
 
 class PredictionResponse(BaseModel):
