@@ -12,6 +12,7 @@ export type PropertyFeatures = Record<PropertyFieldName, number>;
 export type PropertyFieldDefinition = {
   name: PropertyFieldName;
   label: string;
+  unit?: string;
   placeholder: string;
   min?: number;
   max?: number;
@@ -22,7 +23,8 @@ export const PROPERTY_FIELDS: readonly PropertyFieldDefinition[] = [
   {
     name: "squareFootage",
     label: "Square footage",
-    placeholder: "Property floor area",
+    unit: "sq ft",
+    placeholder: "Property floor area in sq ft",
     min: 1,
     step: 1,
   },
@@ -51,14 +53,16 @@ export const PROPERTY_FIELDS: readonly PropertyFieldDefinition[] = [
   {
     name: "lotSize",
     label: "Lot size",
-    placeholder: "Total lot area",
+    unit: "sq ft",
+    placeholder: "Total lot area in sq ft",
     min: 1,
     step: 1,
   },
   {
     name: "distanceToCityCenter",
     label: "Distance to city center",
-    placeholder: "Distance to city center",
+    unit: "miles",
+    placeholder: "Distance in miles",
     min: 0,
     step: 0.1,
   },

@@ -102,12 +102,12 @@ export function PropertyTable<T extends PropertyTableRow>({
             <tr>
               <TableHeader label={firstColumnLabel} field={firstColumnSortField} sort={sort} />
               <TableHeader label={priceColumnLabel} field="price" sort={sort} />
-              <TableHeader label="Square ft" field="squareFootage" sort={sort} />
+              <TableHeader label="Area (sq ft)" field="squareFootage" sort={sort} />
               <TableHeader label="Beds" field="bedrooms" sort={sort} />
               <TableHeader label="Baths" field="bathrooms" sort={sort} />
               <TableHeader label="Year built" field="yearBuilt" sort={sort} />
-              <TableHeader label="Lot size" field="lotSize" sort={sort} />
-              <TableHeader label="City distance" field="distanceToCityCenter" sort={sort} />
+              <TableHeader label="Lot size (sq ft)" field="lotSize" sort={sort} />
+              <TableHeader label="City distance (miles)" field="distanceToCityCenter" sort={sort} />
               <TableHeader label="School rating" field="schoolRating" sort={sort} />
               {rowAction ? <th className="text-right">Action</th> : null}
             </tr>

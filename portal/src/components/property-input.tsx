@@ -25,6 +25,7 @@ function getValidationMessage(input: HTMLInputElement, label: string) {
 export function PropertyInput({
   name,
   label,
+  unit,
   placeholder,
   min,
   max,
@@ -46,6 +47,7 @@ export function PropertyInput({
     <div className={containerClassName}>
       <label htmlFor={inputId} className="item-title form-label">
         {label}
+        {unit ? <span className="ml-1 font-normal text-slate-500">({unit})</span> : null}
       </label>
       <input
         id={inputId}
